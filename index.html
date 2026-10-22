@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP-NetSci | Belajar IP Address</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #050814;
+            --neon-cyan: #00f3ff;
+            --neon-purple: #bc13fe;
+            --glass-bg: rgba(10, 15, 30, 0.65);
+            --glass-border: rgba(0, 243, 255, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(188, 19, 254, 0.05) 0%, transparent 50%);
+        }
+
+        .font-scifi { font-family: 'Orbitron', sans-serif; }
+        .font-mono { font-family: 'Share Tech Mono', monospace; }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .text-neon-cyan {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+        }
+
+        .border-neon-cyan {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        .btn-sci-fi {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-sci-fi:hover {
+            background: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 15px var(--neon-cyan);
+            text-shadow: 0 0 5px white;
+        }
+
+        .btn-sci-fi:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            border-color: gray;
+            color: gray;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 243, 255, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-cyan); }
+
+        /* Canvas for Simulation */
+        #sim-canvas {
+            position: relative;
+            overflow: hidden;
+            background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .network-node {
+            position: absolute;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            user-select: none;
+            transition: filter 0.2s;
+        }
+        .network-node:active { cursor: grabbing; }
+        .network-node.ping-target-select {
+            animation: pulse-border 1.5s infinite;
+            filter: drop-shadow(0 0 10px var(--neon-purple));
+        }
+
+        @keyframes pulse-border {
+            0% { filter: drop-shadow(0 0 5px var(--neon-cyan)); }
+            50% { filter: drop-shadow(0 0 15px var(--neon-cyan)); }
+            100% { filter: drop-shadow(0 0 5px var(--neon-cyan)); }
+        }
+
+        .terminal-text {
+            color: #0f0;
+            text-shadow: 0 0 2px #0f0;
+        }
+
+        /* Accordion */
+        .accordion-content {
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .accordion-active .accordion-content {
+            max-height: 1000px;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 glass-panel border-t-0 border-l-0 border-r-0 rounded-none border-b border-cyan-500/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <svg class="w-8 h-8 text-neon-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    <span class="font-scifi font-bold text-xl tracking-wider text-neon-cyan">NET-CORE</span>
+                </div>
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex space-x-1 font-scifi text-sm">
+                    <button onclick="nav('home')" class="nav-btn px-3 py-2 rounded text-gray-300 hover:text-cyan-400 transition">Home</button>
+                    <button onclick="nav('modul')" class="nav-btn px-3 py-2 rounded text-gray-300 hover:text-cyan-400 transition">Modul</button>
+                    <button onclick="nav('simulasi')" class="nav-btn px-3 py-2 rounded text-gray-300 hover:text-cyan-400 transition">Simulasi</button>
+                    <button onclick="nav('kalkulator')" class="nav-btn px-3 py-2 rounded text-gray-300 hover:text-cyan-400 transition">Kalkulator</button>
+                    <button onclick="nav('game')" class="nav-btn px-3 py-2 rounded text-gray-300 hover:text-cyan-400 transition">Game</button>
+                    <button onclick="document.getElementById('modal-about').classList.remove('hidden')" class="px-3 py-2 rounded text-purple-400 hover:text-purple-300 transition">About</button>
+                </div>
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-300 hover:text-cyan-400 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden glass-panel border-0 border-t border-cyan-500/30">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 font-scifi">
+                <button onclick="nav('home'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 text-gray-300 hover:text-cyan-400">Home</button>
+                <button onclick="nav('modul'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 text-gray-300 hover:text-cyan-400">Modul</button>
+                <button onclick="nav('simulasi'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 text-gray-300 hover:text-cyan-400">Simulasi</button>
+                <button onclick="nav('kalkulator'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 text-gray-300 hover:text-cyan-400">Kalkulator</button>
+                <button onclick="nav('game'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 text-gray-300 hover:text-cyan-400">Game</button>
+                <button onclick="document.getElementById('modal-about').classList.remove('hidden'); toggleMobileMenu()" class="block w-full text-left px-3 py-2 text-purple-400 hover:text-purple-300">About</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow p-4 md:p-8 w-full max-w-7xl mx-auto relative">
+        
+        <!-- View: HOME -->
+        <div id="view-home" class="view-section flex flex-col items-center justify-center text-center h-[70vh] animate-fade-in">
+            <h1 class="font-scifi text-4xl md:text-6xl font-bold text-neon-cyan mb-4">SYSTEM INITIALIZED</h1>
+            <p class="text-gray-400 max-w-2xl mb-8 font-mono text-sm md:text-base">Selamat datang di terminal pembelajaran IP Address interaktif. Kuasai dasar-dasar jaringan, simulasi koneksi, dan uji kemampuanmu di protokol keamanan sistem (mini-games).</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <button onclick="nav('modul')" class="btn-sci-fi font-scifi px-8 py-3 rounded">Mulai Akses Modul</button>
+                <button onclick="nav('simulasi')" class="glass-panel border-cyan-500/50 hover:bg-cyan-900/30 transition px-8 py-3 rounded font-scifi text-cyan-400">Akses Lab Simulasi</button>
+            </div>
+            <div class="mt-12 text-xs font-mono text-gray-600">
+                User: <span id="display-player-name" class="text-cyan-400">GUEST</span> | Status: <span class="text-green-500">CONNECTED</span>
+            </div>
+        </div>
+
+        <!-- View: MODUL -->
+        <div id="view-modul" class="view-section hidden animate-fade-in flex flex-col gap-6">
+            <h2 class="font-scifi text-3xl text-neon-cyan border-b border-cyan-800 pb-2">DATA ARCHIVE: IP ADDRESS</h2>
+            
+            <div class="space-y-4 font-mono">
+                <!-- Accordion Item 1 -->
+                <div class="glass-panel rounded-lg overflow-hidden accordion-item">
+                    <button class="w-full text-left px-6 py-4 font-bold text-cyan-300 hover:bg-cyan-900/20 flex justify-between items-center outline-none" onclick="toggleAccordion(this)">
+                        <span>01. Pengertian IP Address</span>
+                        <svg class="w-5 h-5 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content px-6 text-gray-300 text-sm leading-relaxed border-t border-cyan-900/50">
+                        IP Address (Internet Protocol Address) adalah deretan angka unik yang diberikan kepada setiap perangkat yang terhubung ke jaringan komputer yang menggunakan Protokol Internet untuk komunikasi. Fungsinya seperti alamat rumah, memastikan data dikirim dan diterima oleh perangkat yang tepat.
+                    </div>
+                </div>
+
+                <!-- Accordion Item 2 -->
+                <div class="glass-panel rounded-lg overflow-hidden accordion-item">
+                    <button class="w-full text-left px-6 py-4 font-bold text-cyan-300 hover:bg-cyan-900/20 flex justify-between items-center outline-none" onclick="toggleAccordion(this)">
+                        <span>02. Kelas IP (IPv4)</span>
+                        <svg class="w-5 h-5 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content px-6 text-gray-300 text-sm leading-relaxed border-t border-cyan-900/50">
+                        IP versi 4 (IPv4) dibagi menjadi beberapa kelas berdasarkan oktet pertamanya:<br><br>
+                        - <strong>Kelas A:</strong> 1 - 126 (Untuk jaringan sangat besar, misal: ISP)<br>
+                        - <strong>Kelas B:</strong> 128 - 191 (Untuk jaringan skala menengah)<br>
+                        - <strong>Kelas C:</strong> 192 - 223 (Paling umum, untuk jaringan lokal/kecil)<br>
+                        - <strong>Kelas D:</strong> 224 - 239 (Multicasting)<br>
+                        - <strong>Kelas E:</strong> 240 - 255 (Eksperimental/Riset)
+                    </div>
+                </div>
+
+                <!-- Accordion Item 3 -->
+                <div class="glass-panel rounded-lg overflow-hidden accordion-item">
+                    <button class="w-full text-left px-6 py-4 font-bold text-cyan-300 hover:bg-cyan-900/20 flex justify-between items-center outline-none" onclick="toggleAccordion(this)">
+                        <span>03. IPv4 vs IPv6</span>
+                        <svg class="w-5 h-5 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content px-6 text-gray-300 text-sm leading-relaxed border-t border-cyan-900/50">
+                        <strong>IPv4:</strong> Menggunakan format 32-bit (contoh: 192.168.1.1). Memiliki batas sekitar 4.3 miliar alamat, yang saat ini sudah hampir habis.<br><br>
+                        <strong>IPv6:</strong> Generasi baru menggunakan format 128-bit (contoh: 2001:0db8:85a3:0000:0000:8a2e:0370:7334). Menyediakan jumlah alamat yang hampir tak terbatas untuk mengatasi kekurangan IPv4.
+                    </div>
+                </div>
+
+                <!-- Accordion Item 4 -->
+                <div class="glass-panel rounded-lg overflow-hidden accordion-item">
+                    <button class="w-full text-left px-6 py-4 font-bold text-cyan-300 hover:bg-cyan-900/20 flex justify-between items-center outline-none" onclick="toggleAccordion(this)">
+                        <span>04. Subnetting Dasar</span>
+                        <svg class="w-5 h-5 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content px-6 text-gray-300 text-sm leading-relaxed border-t border-cyan-900/50">
+                        Subnetting adalah teknik memecah jaringan besar menjadi jaringan-jaringan kecil (subnet). Ini membantu meningkatkan efisiensi dan keamanan jaringan. Subnet mask (seperti 255.255.255.0 atau /24) digunakan untuk memisahkan bagian Network ID (alamat jalan) dan Host ID (nomor rumah) dari sebuah IP Address.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Section -->
+            <div class="glass-panel p-6 mt-8 border-purple-500/50">
+                <h3 class="font-scifi text-xl text-purple-400 mb-4">EVALUATION PROTOCOL: QUIZ</h3>
+                <div id="quiz-container" class="font-mono">
+                    <!-- Quiz questions injected here -->
+                </div>
+                <div id="quiz-result" class="hidden mt-4 p-4 rounded bg-green-900/30 border border-green-500 text-green-400 font-scifi text-center"></div>
+            </div>
+        </div>
+
+        <!-- View: SIMULASI -->
+        <div id="view-simulasi" class="view-section hidden animate-fade-in h-[80vh] flex flex-col md:flex-row gap-4">
+            <!-- Sidebar Tools -->
+            <div class="glass-panel w-full md:w-64 p-4 flex flex-col gap-4 font-mono z-10 shrink-0">
+                <h3 class="text-cyan-400 font-scifi border-b border-cyan-800 pb-2 text-center">NODE INVENTORY</h3>
+                <p class="text-xs text-gray-400 text-center">Klik untuk spawn ke kanvas</p>
+                <div class="grid grid-cols-2 md:grid-cols-1 gap-3">
+                    <button onclick="spawnNode('PC')" class="glass-panel p-2 flex flex-col items-center hover:bg-cyan-900/40 transition cursor-pointer border-cyan-500/30">
+                        <svg class="w-8 h-8 text-blue-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span class="text-xs">PC Client</span>
+                    </button>
+                    <button onclick="spawnNode('Laptop')" class="glass-panel p-2 flex flex-col items-center hover:bg-cyan-900/40 transition cursor-pointer border-cyan-500/30">
+                        <svg class="w-8 h-8 text-blue-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        <span class="text-xs">Laptop</span>
+                    </button>
+                    <button onclick="spawnNode('Switch')" class="glass-panel p-2 flex flex-col items-center hover:bg-cyan-900/40 transition cursor-pointer border-purple-500/30">
+                        <svg class="w-8 h-8 text-purple-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-xs">Switch</span>
+                    </button>
+                </div>
+                <div class="mt-auto flex flex-col gap-2">
+                    <button id="btn-ping" onclick="togglePingMode()" class="btn-sci-fi py-2 text-sm w-full">INIT PING TEST</button>
+                    <button onclick="clearCanvas()" class="glass-panel border-red-500/50 text-red-400 py-2 text-sm hover:bg-red-900/30 transition w-full font-scifi">CLEAR LAB</button>
+                </div>
+            </div>
+
+            <!-- Canvas Area -->
+            <div class="glass-panel flex-grow relative flex flex-col border-cyan-500/20 overflow-hidden">
+                <div id="sim-canvas" class="w-full h-full relative" 
+                     ondragover="event.preventDefault()" 
+                     ondrop="dropNode(event)">
+                    <!-- Nodes injected here -->
+                    <div id="ping-instructions" class="absolute top-4 left-1/2 -translate-x-1/2 glass-panel px-4 py-2 text-yellow-400 text-sm font-mono hidden z-20 whitespace-nowrap border-yellow-500/30">
+                        Select SOURCE Node...
+                    </div>
+                </div>
+                
+                <!-- Terminal Output -->
+                <div id="sim-terminal" class="h-32 glass-panel border-t-cyan-500/50 border-l-0 border-r-0 border-b-0 rounded-none bg-black/80 font-mono text-sm p-2 overflow-y-auto hidden flex-col">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-1 mb-1">
+                        <span class="text-gray-400 text-xs">root@lab:~#</span>
+                        <button onclick="closeTerminal()" class="text-gray-500 hover:text-white">&times;</button>
+                    </div>
+                    <div id="terminal-content" class="flex-grow space-y-1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: KALKULATOR -->
+        <div id="view-kalkulator" class="view-section hidden animate-fade-in max-w-4xl mx-auto">
+            <h2 class="font-scifi text-3xl text-neon-cyan mb-6 text-center">SUBNET CALCULATOR</h2>
+            <div class="glass-panel p-6 md:p-8 neon-border relative overflow-hidden">
+                <!-- Decorative background elements -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                    <!-- Input Section -->
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block font-mono text-cyan-400 text-sm mb-2">TARGET IP ADDRESS</label>
+                            <input type="text" id="calc-ip" placeholder="192.168.1.1" class="w-full bg-black/50 border border-cyan-500/50 rounded p-3 font-mono text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition" oninput="calculateSubnet()">
+                        </div>
+                        <div>
+                            <label class="block font-mono text-cyan-400 text-sm mb-2">PREFIX CIDR ( / )</label>
+                            <input type="number" id="calc-prefix" placeholder="24" min="1" max="32" class="w-full bg-black/50 border border-cyan-500/50 rounded p-3 font-mono text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition" oninput="calculateSubnet()">
+                        </div>
+                        <div class="p-4 bg-cyan-900/20 rounded border border-cyan-500/20 font-mono text-xs text-gray-300">
+                            <span class="text-cyan-400">INFO:</span> Kalkulasi dilakukan secara real-time. Pastikan format IP valid (0-255 per oktet).
+                        </div>
+                    </div>
+
+                    <!-- Output Section -->
+                    <div class="font-mono bg-black/60 rounded-lg p-4 border border-gray-700 shadow-inner">
+                        <h4 class="text-gray-400 border-b border-gray-700 pb-2 mb-4">ANALYSIS RESULT</h4>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between items-center border-b border-gray-800 pb-1">
+                                <span class="text-gray-500">Binary Form</span>
+                                <span id="out-binary" class="text-purple-400 text-xs">...</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-gray-800 pb-1">
+                                <span class="text-gray-500">Subnet Mask</span>
+                                <span id="out-mask" class="text-cyan-300">...</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-gray-800 pb-1">
+                                <span class="text-gray-500">Network ID</span>
+                                <span id="out-network" class="text-white font-bold">...</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-gray-800 pb-1">
+                                <span class="text-gray-500">Broadcast ID</span>
+                                <span id="out-broadcast" class="text-white">...</span>
+                            </div>
+                            <div class="flex flex-col border-b border-gray-800 pb-1">
+                                <span class="text-gray-500 mb-1">Valid Host Range</span>
+                                <span id="out-range" class="text-green-400 text-right">...</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500">Total Valid Hosts</span>
+                                <span id="out-total" class="text-yellow-400">...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: GAME & LEADERBOARD -->
+        <div id="view-game" class="view-section hidden animate-fade-in">
+            <h2 class="font-scifi text-3xl text-neon-cyan mb-6 text-center">CYBER TRAINING ARENA</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Game Selection / Area -->
+                <div class="lg:col-span-2 flex flex-col gap-4">
+                    <!-- Menu Games -->
+                    <div id="game-menu" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="startGame('Class Matcher')" class="glass-panel p-6 flex flex-col items-center hover:bg-cyan-900/30 transition border-cyan-500/50 group">
+                            <div class="w-12 h-12 rounded-full bg-cyan-900/50 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                <span class="font-scifi text-cyan-400 font-bold">A|B</span>
+                            </div>
+                            <h3 class="font-scifi text-lg text-white mb-1">Class Matcher</h3>
+                            <p class="text-xs text-gray-400 font-mono text-center">Tentukan kelas IP Address dengan cepat.</p>
+                        </button>
+                        <button onclick="startGame('Binary Decoder')" class="glass-panel p-6 flex flex-col items-center hover:bg-cyan-900/30 transition border-cyan-500/50 group">
+                            <div class="w-12 h-12 rounded-full bg-cyan-900/50 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                <span class="font-mono text-cyan-400 font-bold">101</span>
+                            </div>
+                            <h3 class="font-scifi text-lg text-white mb-1">Binary Decoder</h3>
+                            <p class="text-xs text-gray-400 font-mono text-center">Konversi Desimal ke Biner secepat kilat.</p>
+                        </button>
+                        <button onclick="startGame('Subnet Speed Run')" class="glass-panel p-6 flex flex-col items-center hover:bg-cyan-900/30 transition border-purple-500/50 group">
+                            <div class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                <span class="font-scifi text-purple-400 font-bold">/24</span>
+                            </div>
+                            <h3 class="font-scifi text-lg text-white mb-1">Subnet Speed Run</h3>
+                            <p class="text-xs text-gray-400 font-mono text-center">Tebak Network/Broadcast dari IP+Prefix.</p>
+                        </button>
+                        <button onclick="startGame('Rogue IP Hunter')" class="glass-panel p-6 flex flex-col items-center hover:bg-cyan-900/30 transition border-purple-500/50 group">
+                            <div class="w-12 h-12 rounded-full bg-purple-900/50 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <h3 class="font-scifi text-lg text-white mb-1">Rogue IP Hunter</h3>
+                            <p class="text-xs text-gray-400 font-mono text-center">Eliminasi IP yang salah subnet.</p>
+                        </button>
+                    </div>
+
+                    <!-- Active Game Arena -->
+                    <div id="game-arena" class="hidden glass-panel p-6 border-cyan-400 neon-border flex flex-col relative min-h-[300px]">
+                        <div class="flex justify-between items-center mb-4 border-b border-cyan-800 pb-2">
+                            <h3 id="active-game-title" class="font-scifi text-xl text-cyan-400">Game Name</h3>
+                            <div class="font-mono flex gap-4 text-sm">
+                                <span class="text-yellow-400">TIME: <span id="game-timer" class="text-white text-lg">30</span>s</span>
+                                <span class="text-green-400">SCORE: <span id="game-score" class="text-white text-lg">0</span></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Game Content -->
+                        <div id="game-content" class="flex-grow flex flex-col items-center justify-center text-center">
+                            <!-- Injected via JS -->
+                        </div>
+
+                        <!-- Game Over Screen -->
+                        <div id="game-over-screen" class="absolute inset-0 bg-black/90 backdrop-blur flex flex-col items-center justify-center hidden z-10 rounded-lg">
+                            <h3 class="font-scifi text-3xl text-red-500 mb-2">TIME'S UP</h3>
+                            <p class="font-mono text-gray-300 mb-1">Final Score</p>
+                            <div id="final-score-display" class="font-scifi text-5xl text-yellow-400 mb-6 neon-text">0</div>
+                            <div class="flex gap-4">
+                                <button onclick="quitGame()" class="glass-panel px-4 py-2 font-scifi text-sm text-gray-300 hover:text-white">Back to Menu</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="glass-panel p-4 flex flex-col h-[500px] border-yellow-500/30">
+                    <h3 class="font-scifi text-yellow-400 text-center border-b border-yellow-900/50 pb-2 mb-3 flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+                        GLOBAL LEADERBOARD
+                    </h3>
+                    
+                    <div class="flex text-xs font-mono text-gray-500 border-b border-gray-700 pb-1 mb-2 px-2">
+                        <span class="w-8">#</span>
+                        <span class="flex-grow">PLAYER</span>
+                        <span class="w-16 text-right">SCORE</span>
+                    </div>
+                    
+                    <div id="leaderboard-list" class="flex-grow overflow-y-auto space-y-1 pr-1 font-mono text-sm">
+                        <div class="text-center text-gray-500 py-4 text-xs">Loading data...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL: INITIAL NAME -->
+    <div id="modal-name" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center hidden">
+        <div class="glass-panel p-8 max-w-md w-full mx-4 border-cyan-500 neon-border animate-fade-in relative overflow-hidden">
+            <h2 class="font-scifi text-2xl text-cyan-400 mb-2 text-center">SYSTEM LOGIN</h2>
+            <p class="text-gray-400 text-sm text-center mb-6 font-mono">Masukkan identitas agen untuk menyimpan progres dan skor di server global.</p>
+            <form id="form-name" onsubmit="savePlayerName(event)" class="space-y-4">
+                <input type="text" id="input-player-name" required maxlength="15" placeholder="Codename..." class="w-full bg-black/50 border border-cyan-500/50 rounded p-3 font-mono text-white text-center focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400">
+                <button type="submit" class="btn-sci-fi w-full py-3 rounded font-scifi">INITIALIZE PROTOCOL</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ABOUT -->
+    <div id="modal-about" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden">
+        <div class="glass-panel p-8 max-w-sm w-full mx-4 border-purple-500 border relative animate-fade-in">
+            <button onclick="document.getElementById('modal-about').classList.add('hidden')" class="absolute top-2 right-3 text-gray-400 hover:text-white">&times;</button>
+            <h2 class="font-scifi text-2xl text-purple-400 mb-6 text-center border-b border-purple-800 pb-2">ABOUT SYSTEM</h2>
+            <div class="font-mono text-gray-300 space-y-3 text-sm">
+                <div class="flex flex-col">
+                    <span class="text-gray-500 text-xs">Pembuat:</span>
+                    <span class="text-white font-bold">Aldiansyah</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-gray-500 text-xs">Tanggal Publish:</span>
+                    <span class="text-white font-bold">22 Oktober 2026</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-gray-500 text-xs">Asal Sekolah:</span>
+                    <span class="text-white font-bold">SMK Nurul Huda Curug Wetan</span>
+                </div>
+            </div>
+            <div class="mt-8 text-center text-xs text-gray-600 font-scifi">
+                NET-CORE V1.0 - SECURE CONNECTION
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: NODE CONFIG -->
+    <div id="modal-config" class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden">
+        <div class="glass-panel p-6 max-w-sm w-full mx-4 border-cyan-500 relative">
+            <h2 class="font-scifi text-xl text-cyan-400 mb-4 border-b border-cyan-800 pb-2" id="config-title">Config Node</h2>
+            <div class="space-y-4 font-mono text-sm">
+                <div>
+                    <label class="block text-gray-400 mb-1">IP Address</label>
+                    <input type="text" id="cfg-ip" class="w-full bg-black/50 border border-cyan-500/50 rounded p-2 text-white focus:outline-none focus:border-cyan-400">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-1">Subnet Mask</label>
+                    <input type="text" id="cfg-mask" class="w-full bg-black/50 border border-cyan-500/50 rounded p-2 text-white focus:outline-none focus:border-cyan-400" value="255.255.255.0">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="saveNodeConfig()" class="btn-sci-fi flex-grow py-2 rounded">SAVE</button>
+                    <button onclick="closeConfig()" class="glass-panel border-gray-600 flex-grow py-2 rounded hover:bg-gray-800">CANCEL</button>
+                </div>
+                <button onclick="deleteCurrentNode()" class="w-full text-red-500 text-xs hover:text-red-400 pt-2 border-t border-gray-800 mt-2">Delete Node</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment variables handling based on instructions
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ip-learning-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Dummy config for fallback if not provided by env, usually it throws without real config
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth, user;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            initAuth();
+        } catch(e) {
+            console.warn("Firebase initialization skipped or failed (Running locally without config?)", e);
+            // Fallback UI handling if firebase fails
+            document.getElementById('leaderboard-list').innerHTML = '<div class="text-center text-red-500 py-4 text-xs">Offline Mode</div>';
+        }
+
+        async function initAuth() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                user = auth.currentUser;
+                
+                // Expose save function to global scope for the game
+                window.firebaseSaveScore = async function(gameName, score) {
+                    if (!user || !window.playerName) return;
+                    try {
+                        const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+                        await addDoc(lbRef, {
+                            playerName: window.playerName,
+                            score: score,
+                            game: gameName,
+                            userId: user.uid,
+                            timestamp: serverTimestamp()
+                        });
+                    } catch(e) {
+                        console.error("Error saving score", e);
+                    }
+                };
+
+                setupLeaderboardListener();
+
+            } catch (error) {
+                console.error("Authentication failed:", error);
+            }
+        }
+
+        function setupLeaderboardListener() {
+            if (!user) return;
+            const lbRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+            
+            // Note: NO complex queries as per RULES. Fetch all, sort in memory.
+            onSnapshot(lbRef, (snapshot) => {
+                const scores = [];
+                snapshot.forEach(doc => {
+                    scores.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort descending by score
+                scores.sort((a, b) => b.score - a.score);
+                
+                // Render top 50 to avoid massive lists
+                const listEl = document.getElementById('leaderboard-list');
+                listEl.innerHTML = '';
+                
+                if (scores.length === 0) {
+                    listEl.innerHTML = '<div class="text-center text-gray-500 py-4 text-xs">No records yet.</div>';
+                    return;
+                }
+
+                scores.slice(0, 50).forEach((data, index) => {
+                    const row = document.createElement('div');
+                    row.className = `flex px-2 py-2 rounded ${index === 0 ? 'bg-yellow-900/30 text-yellow-300' : index % 2 === 0 ? 'bg-black/30' : ''}`;
+                    row.innerHTML = `
+                        <span class="w-8 text-gray-500">${index + 1}</span>
+                        <span class="flex-grow font-bold truncate pr-2">${escapeHTML(data.playerName)} <span class="text-[10px] text-gray-600 font-normal ml-1">(${data.game.split(' ')[0]})</span></span>
+                        <span class="w-16 text-right text-cyan-400">${data.score}</span>
+                    `;
+                    listEl.appendChild(row);
+                });
+
+            }, (error) => {
+                console.error("Leaderboard error:", error);
+            });
+        }
+
+        function escapeHTML(str) {
+            if(!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag])
+            );
+        }
+    </script>
+
+    <!-- Main Application Logic -->
+    <script>
+        // --- GLOBAL STATE ---
+        window.playerName = localStorage.getItem('netcore_player') || '';
+        
+        window.onload = () => {
+            if (!window.playerName) {
+                document.getElementById('modal-name').classList.remove('hidden');
+            } else {
+                document.getElementById('display-player-name').innerText = window.playerName;
+            }
+            initQuiz();
+        };
+
+        function savePlayerName(e) {
+            e.preventDefault();
+            const input = document.getElementById('input-player-name').value.trim();
+            if(input) {
+                window.playerName = input;
+                localStorage.setItem('netcore_player', input);
+                document.getElementById('display-player-name').innerText = window.playerName;
+                document.getElementById('modal-name').classList.add('hidden');
+            }
+        }
+
+        // --- NAVIGATION ---
+        function nav(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-cyan-400', 'bg-cyan-900/20');
+                btn.classList.add('text-gray-300');
+            });
+            // Update active state roughly (depends on exact text match if needed, keeping it simple here)
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        // --- MODUL (Accordion & Quiz) ---
+        function toggleAccordion(btn) {
+            const item = btn.parentElement;
+            const wasActive = item.classList.contains('accordion-active');
+            
+            // Close all
+            document.querySelectorAll('.accordion-item').forEach(el => {
+                el.classList.remove('accordion-active');
+                el.querySelector('svg').style.transform = 'rotate(0deg)';
+            });
+            
+            // Open clicked if it wasn't active
+            if (!wasActive) {
+                item.classList.add('accordion-active');
+                btn.querySelector('svg').style.transform = 'rotate(180deg)';
+            }
+        }
+
+        const quizData = [
+            { q: "Format IP Address versi 4 (IPv4) terdiri dari berapa bit?", opts: ["16 bit", "32 bit", "64 bit", "128 bit"], ans: 1 },
+            { q: "IP Address 192.168.1.1 termasuk ke dalam kelas apa?", opts: ["Kelas A", "Kelas B", "Kelas C", "Kelas D"], ans: 2 },
+            { q: "Apa fungsi utama dari Subnet Mask?", opts: ["Mempercepat koneksi", "Membedakan Network ID dan Host ID", "Mengganti MAC Address", "Mencegah virus"], ans: 1 },
+            { q: "Berapa banyak alamat yang bisa ditampung oleh IPv6?", opts: ["~4.3 Miliar", "Terbatas", "Hanya untuk lokal", "Sangat besar/Hampir tak terbatas"], ans: 3 }
+        ];
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            let html = '';
+            quizData.forEach((item, index) => {
+                html += `
+                    <div class="mb-6 quiz-q" data-ans="${item.ans}">
+                        <p class="text-white mb-2">${index + 1}. ${item.q}</p>
+                        <div class="space-y-2 pl-4">
+                            ${item.opts.map((opt, i) => `
+                                <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-300 transition">
+                                    <input type="radio" name="q${index}" value="${i}" class="form-radio text-purple-500 bg-black border-gray-600 focus:ring-purple-500">
+                                    <span class="text-gray-400 text-sm">${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            html += `<button onclick="submitQuiz()" class="btn-sci-fi px-6 py-2 mt-2 text-sm rounded">SUBMIT ANSWERS</button>`;
+            container.innerHTML = html;
+        }
+
+        function submitQuiz() {
+            let score = 0;
+            const qs = document.querySelectorAll('.quiz-q');
+            qs.forEach((q, index) => {
+                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                if (selected && parseInt(selected.value) === parseInt(q.dataset.ans)) {
+                    score++;
+                }
+            });
+            const res = document.getElementById('quiz-result');
+            res.innerHTML = `EVALUATION COMPLETE. SCORE: ${score} / ${quizData.length}`;
+            res.classList.remove('hidden');
+        }
+
+        // --- SIMULASI (Canvas, Drag Drop, Ping) ---
+        let nodes = [];
+        let nodeIdCounter = 0;
+        let activeNodeId = null;
+        
+        let isPingMode = false;
+        let pingSource = null;
+
+        const icons = {
+            'PC': '<svg class="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>',
+            'Laptop': '<svg class="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>',
+            'Switch': '<svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>'
+        };
+
+        function spawnNode(type) {
+            const canvas = document.getElementById('sim-canvas');
+            const rect = canvas.getBoundingClientRect();
+            
+            // Random position near center
+            const x = (rect.width / 2) - 40 + (Math.random() * 40 - 20);
+            const y = (rect.height / 2) - 40 + (Math.random() * 40 - 20);
+            
+            const node = {
+                id: `node-${nodeIdCounter++}`,
+                type: type,
+                ip: type === 'Switch' ? '' : `192.168.1.${nodeIdCounter + 9}`,
+                mask: type === 'Switch' ? '' : '255.255.255.0',
+                x: Math.max(0, Math.min(x, rect.width - 80)),
+                y: Math.max(0, Math.min(y, rect.height - 80))
+            };
+            
+            nodes.push(node);
+            renderNodes();
+        }
+
+        function renderNodes() {
+            const canvas = document.getElementById('sim-canvas');
+            // Remove existing nodes
+            document.querySelectorAll('.network-node').forEach(el => el.remove());
+            
+            nodes.forEach(node => {
+                const el = document.createElement('div');
+                el.className = 'network-node';
+                el.id = node.id;
+                el.style.left = `${node.x}px`;
+                el.style.top = `${node.y}px`;
+                
+                let ipDisplay = node.type === 'Switch' ? '<span class="text-[10px] text-purple-300">L2 Switch</span>' : `<span class="text-[10px] text-green-400 font-mono">${node.ip || 'No IP'}</span>`;
+                
+                el.innerHTML = `
+                    ${icons[node.type]}
+                    <span class="text-xs font-bold text-gray-300 mt-1">${node.type}</span>
+                    ${ipDisplay}
+                `;
+                
+                // Event listeners for drag and click
+                setupNodeEvents(el, node);
+                
+                canvas.appendChild(el);
+            });
+        }
+
+        function setupNodeEvents(el, nodeData) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            // Prevent default drag for custom implementation
+            el.ondragstart = () => false;
+
+            const onDown = (e) => {
+                if (e.button !== 0 && e.type !== 'touchstart') return; // Only left click
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                initialX = nodeData.x;
+                initialY = nodeData.y;
+                el.style.zIndex = 10;
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                
+                const canvasRect = document.getElementById('sim-canvas').getBoundingClientRect();
+                
+                let newX = initialX + dx;
+                let newY = initialY + dy;
+                
+                // Bounds checking
+                newX = Math.max(0, Math.min(newX, canvasRect.width - el.offsetWidth));
+                newY = Math.max(0, Math.min(newY, canvasRect.height - el.offsetHeight));
+                
+                el.style.left = `${newX}px`;
+                el.style.top = `${newY}px`;
+                nodeData.x = newX;
+                nodeData.y = newY;
+            };
+
+            const onUp = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                el.style.zIndex = 1;
+                
+                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                
+                // If it was a click (didn't move much)
+                if (Math.abs(clientX - startX) < 5 && Math.abs(clientY - startY) < 5) {
+                    handleNodeClick(nodeData.id);
+                }
+            };
+
+            el.addEventListener('mousedown', onDown);
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            
+            el.addEventListener('touchstart', onDown, {passive: false});
+            document.addEventListener('touchmove', onMove, {passive: false});
+            document.addEventListener('touchend', onUp);
+        }
+
+        function handleNodeClick(id) {
+            const node = nodes.find(n => n.id === id);
+            
+            if (isPingMode) {
+                if (node.type === 'Switch') return; // Switch has no IP in this sim
+                
+                if (!pingSource) {
+                    pingSource = node;
+                    document.getElementById(id).classList.add('ping-target-select');
+                    document.getElementById('ping-instructions').innerText = `Source: ${node.ip} | Select TARGET Node...`;
+                } else {
+                    if (pingSource.id === id) return; // Same node
+                    runPing(pingSource, node);
+                    resetPingMode();
+                }
+            } else {
+                // Open Config
+                if(node.type === 'Switch') return; // No config for switch
+                activeNodeId = id;
+                document.getElementById('config-title').innerText = `Config ${node.type}`;
+                document.getElementById('cfg-ip').value = node.ip;
+                document.getElementById('cfg-mask').value = node.mask;
+                document.getElementById('modal-config').classList.remove('hidden');
+            }
+        }
+
+        function saveNodeConfig() {
+            const node = nodes.find(n => n.id === activeNodeId);
+            if(node) {
+                node.ip = document.getElementById('cfg-ip').value.trim();
+                node.mask = document.getElementById('cfg-mask').value.trim();
+                renderNodes();
+            }
+            closeConfig();
+        }
+
+        function deleteCurrentNode() {
+            nodes = nodes.filter(n => n.id !== activeNodeId);
+            renderNodes();
+            closeConfig();
+        }
+
+        function closeConfig() {
+            activeNodeId = null;
+            document.getElementById('modal-config').classList.add('hidden');
+        }
+
+        function clearCanvas() {
+            nodes = [];
+            renderNodes();
+            document.getElementById('sim-terminal').classList.add('hidden');
+            resetPingMode();
+        }
+
+        function togglePingMode() {
+            const btn = document.getElementById('btn-ping');
+            isPingMode = !isPingMode;
+            if(isPingMode) {
+                btn.classList.add('bg-cyan-900');
+                btn.innerText = "CANCEL PING";
+                document.getElementById('ping-instructions').classList.remove('hidden');
+                document.getElementById('ping-instructions').innerText = "Select SOURCE Node...";
+                pingSource = null;
+            } else {
+                resetPingMode();
+            }
+        }
+
+        function resetPingMode() {
+            isPingMode = false;
+            pingSource = null;
+            const btn = document.getElementById('btn-ping');
+            btn.classList.remove('bg-cyan-900');
+            btn.innerText = "INIT PING TEST";
+            document.getElementById('ping-instructions').classList.add('hidden');
+            document.querySelectorAll('.network-node').forEach(el => el.classList.remove('ping-target-select'));
+        }
+
+        function runPing(source, target) {
+            const term = document.getElementById('sim-terminal');
+            const content = document.getElementById('terminal-content');
+            term.classList.remove('hidden');
+            term.classList.add('flex');
+            
+            content.innerHTML = `<div class="text-gray-400">Pinging ${target.ip} with 32 bytes of data:</div>`;
+            
+            // Logic to check if same subnet
+            const ip1 = ip2long(source.ip);
+            const mask1 = ip2long(source.mask);
+            const ip2 = ip2long(target.ip);
+            const mask2 = ip2long(target.mask);
+            
+            // Basic validity check
+            if (isNaN(ip1) || isNaN(mask1) || isNaN(ip2) || isNaN(mask2)) {
+                content.innerHTML += `<div class="text-red-500 mt-2">Ping request could not find host. Please check configurations.</div>`;
+                return;
+            }
+
+            const isSameSubnet = (ip1 & mask1) === (ip2 & mask1) && (ip1 & mask2) === (ip2 & mask2);
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i >= 4) {
+                    clearInterval(interval);
+                    content.innerHTML += `<div class="text-gray-400 mt-2">Ping statistics for ${target.ip}:</div>`;
+                    if (isSameSubnet) {
+                        content.innerHTML += `<div class="text-gray-400">&nbsp;&nbsp;&nbsp;&nbsp;Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),</div>`;
+                    } else {
+                        content.innerHTML += `<div class="text-gray-400">&nbsp;&nbsp;&nbsp;&nbsp;Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),</div>`;
+                    }
+                    term.scrollTop = term.scrollHeight;
+                    return;
+                }
+                
+                if (isSameSubnet) {
+                    const time = Math.floor(Math.random() * 5) + 1;
+                    content.innerHTML += `<div class="terminal-text">Reply from ${target.ip}: bytes=32 time=${time}ms TTL=128</div>`;
+                } else {
+                    content.innerHTML += `<div class="text-red-500">Request timed out.</div>`;
+                }
+                term.scrollTop = term.scrollHeight;
+                i++;
+            }, 500);
+        }
+
+        function closeTerminal() {
+            document.getElementById('sim-terminal').classList.add('hidden');
+            document.getElementById('sim-terminal').classList.remove('flex');
+        }
+
+        // --- KALKULATOR ---
+        function calculateSubnet() {
+            const ipInput = document.getElementById('calc-ip').value.trim();
+            const prefixInput = parseInt(document.getElementById('calc-prefix').value);
+
+            // Reset outputs
+            const resets = ['out-binary', 'out-mask', 'out-network', 'out-broadcast', 'out-range', 'out-total'];
+            if (!ipInput || isNaN(prefixInput) || prefixInput < 1 || prefixInput > 32) {
+                resets.forEach(id => document.getElementById(id).innerText = '...');
+                return;
+            }
+
+            // Validate IP
+            const ipParts = ipInput.split('.');
+            if (ipParts.length !== 4 || ipParts.some(p => p === '' || isNaN(p) || p < 0 || p > 255)) {
+                 resets.forEach(id => document.getElementById(id).innerText = 'Invalid IP');
+                 return;
+            }
+
+            try {
+                const ipLong = ip2long(ipInput);
+                const maskLong = prefix2mask(prefixInput);
+                
+                // Network and Broadcast
+                const netLong = (ipLong & maskLong) >>> 0;
+                const bcLong = (netLong | (~maskLong)) >>> 0;
+                
+                // Binary formatting
+                const ipBinArr = ipParts.map(p => parseInt(p).toString(2).padStart(8, '0'));
+                
+                // Update UI
+                document.getElementById('out-binary').innerText = ipBinArr.join('.');
+                document.getElementById('out-mask').innerText = long2ip(maskLong);
+                document.getElementById('out-network').innerText = long2ip(netLong) + ` /${prefixInput}`;
+                document.getElementById('out-broadcast').innerText = long2ip(bcLong);
+                
+                let totalHosts = 0;
+                if (prefixInput === 31 || prefixInput === 32) {
+                    document.getElementById('out-range').innerText = 'N/A (P2P/Host)';
+                    document.getElementById('out-total').innerText = prefixInput === 32 ? 1 : 2;
+                } else {
+                    totalHosts = bcLong - netLong - 1;
+                    document.getElementById('out-range').innerText = `${long2ip(netLong + 1)} - ${long2ip(bcLong - 1)}`;
+                    document.getElementById('out-total').innerText = totalHosts.toLocaleString();
+                }
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // IP Math Helpers
+        function ip2long(ip) {
+            if(!ip) return NaN;
+            return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+        }
+        function long2ip(long) {
+            return [ (long >>> 24), (long >> 16 & 255), (long >> 8 & 255), (long & 255) ].join('.');
+        }
+        function prefix2mask(prefix) {
+            return (0xffffffff << (32 - prefix)) >>> 0;
+        }
+
+        // --- GAME LOGIC ---
+        let gameState = {
+            active: null,
+            score: 0,
+            time: 0,
+            interval: null,
+            currentQ: null
+        };
+
+        function startGame(gameName) {
+            document.getElementById('game-menu').classList.add('hidden');
+            document.getElementById('game-arena').classList.remove('hidden');
+            document.getElementById('game-over-screen').classList.add('hidden');
+            
+            document.getElementById('active-game-title').innerText = gameName;
+            
+            gameState.active = gameName;
+            gameState.score = 0;
+            gameState.time = 30; // 30 seconds time attack
+            
+            updateGameUI();
+            
+            gameState.interval = setInterval(() => {
+                gameState.time--;
+                document.getElementById('game-timer').innerText = gameState.time;
+                if (gameState.time <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            nextQuestion();
+        }
+
+        function updateGameUI() {
+            document.getElementById('game-score').innerText = gameState.score;
+            document.getElementById('game-timer').innerText = gameState.time;
+        }
+
+        function nextQuestion() {
+            const content = document.getElementById('game-content');
+            content.innerHTML = ''; // clear
+            
+            if (gameState.active === 'Class Matcher') {
+                // Generate random IP
+                const classes = ['A', 'B', 'C'];
+                const cls = classes[Math.floor(Math.random() * 3)];
+                let firstOctet;
+                if(cls === 'A') firstOctet = Math.floor(Math.random() * 126) + 1;
+                else if(cls === 'B') firstOctet = Math.floor(Math.random() * 64) + 128;
+                else firstOctet = Math.floor(Math.random() * 32) + 192;
+                
+                const ip = `${firstOctet}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+                gameState.currentQ = cls;
+
+                content.innerHTML = `
+                    <div class="text-gray-400 text-sm mb-2 font-mono">Tentukan Kelas IP:</div>
+                    <div class="text-4xl font-mono text-white mb-8 neon-text">${ip}</div>
+                    <div class="flex gap-4">
+                        <button onclick="checkAnswer('A')" class="btn-sci-fi px-6 py-3 rounded text-xl">Kelas A</button>
+                        <button onclick="checkAnswer('B')" class="btn-sci-fi px-6 py-3 rounded text-xl">Kelas B</button>
+                        <button onclick="checkAnswer('C')" class="btn-sci-fi px-6 py-3 rounded text-xl">Kelas C</button>
+                    </div>
+                `;
+            } 
+            else if (gameState.active === 'Binary Decoder') {
+                const dec = Math.floor(Math.random() * 256);
+                const bin = dec.toString(2).padStart(8, '0');
+                
+                // 50% chance dec to bin, 50% bin to dec
+                const toBin = Math.random() > 0.5;
+                
+                if (toBin) {
+                    gameState.currentQ = bin;
+                    content.innerHTML = `
+                        <div class="text-gray-400 text-sm mb-2 font-mono">Convert to Binary (8-bit):</div>
+                        <div class="text-4xl font-scifi text-cyan-400 mb-6">${dec}</div>
+                        <div class="flex gap-2 w-full max-w-xs">
+                            <input type="text" id="game-input" class="w-full bg-black/50 border border-cyan-500 rounded p-2 text-center text-xl font-mono text-white" maxlength="8" autocomplete="off" autofocus onkeypress="if(event.key==='Enter') checkAnswer(this.value)">
+                            <button onclick="checkAnswer(document.getElementById('game-input').value)" class="bg-cyan-600 text-white px-4 rounded font-mono">→</button>
+                        </div>
+                    `;
+                } else {
+                    gameState.currentQ = dec.toString();
+                    content.innerHTML = `
+                        <div class="text-gray-400 text-sm mb-2 font-mono">Convert to Decimal:</div>
+                        <div class="text-4xl font-mono text-purple-400 mb-6 tracking-widest">${bin}</div>
+                        <div class="flex gap-2 w-full max-w-xs">
+                            <input type="number" id="game-input" class="w-full bg-black/50 border border-purple-500 rounded p-2 text-center text-xl font-mono text-white" autocomplete="off" autofocus onkeypress="if(event.key==='Enter') checkAnswer(this.value)">
+                            <button onclick="checkAnswer(document.getElementById('game-input').value)" class="bg-purple-600 text-white px-4 rounded font-mono">→</button>
+                        </div>
+                    `;
+                }
+                setTimeout(() => { if(document.getElementById('game-input')) document.getElementById('game-input').focus(); }, 50);
+            }
+            else if (gameState.active === 'Subnet Speed Run') {
+                const prefixes = [24, 25, 26];
+                const pfx = prefixes[Math.floor(Math.random() * prefixes.length)];
+                
+                // base /24
+                const ip = `192.168.1.${Math.floor(Math.random() * 250) + 1}`;
+                const ipLong = ip2long(ip);
+                const mask = prefix2mask(pfx);
+                const netId = long2ip((ipLong & mask) >>> 0);
+                const isAskingNet = Math.random() > 0.5;
+                
+                gameState.currentQ = isAskingNet ? netId : long2ip(((ipLong & mask) | ~mask) >>> 0); // net or broadcast
+                
+                // Generate fake options based on subnet size
+                const step = 256 / Math.pow(2, pfx - 24);
+                let options = [gameState.currentQ];
+                
+                while(options.length < 3) {
+                    let fake;
+                    if(isAskingNet) {
+                        fake = `192.168.1.${Math.floor(Math.random() * (256/step)) * step}`;
+                    } else {
+                        fake = `192.168.1.${Math.floor(Math.random() * (256/step)) * step + step - 1}`;
+                    }
+                    if(!options.includes(fake)) options.push(fake);
+                }
+                options = options.sort(() => Math.random() - 0.5); // shuffle
+
+                content.innerHTML = `
+                    <div class="text-gray-400 text-sm mb-2 font-mono">Target: ${ip} /${pfx}</div>
+                    <div class="text-2xl font-scifi text-white mb-6">Tebak <span class="text-cyan-400">${isAskingNet ? 'NETWORK ID' : 'BROADCAST ID'}</span></div>
+                    <div class="flex flex-col gap-3 w-full max-w-sm">
+                        ${options.map(opt => `<button onclick="checkAnswer('${opt}')" class="glass-panel border-cyan-500/50 hover:bg-cyan-900/40 p-3 font-mono text-lg transition">${opt}</button>`).join('')}
+                    </div>
+                `;
+            }
+            else if (gameState.active === 'Rogue IP Hunter') {
+                // Generate a base /24 network
+                const net3 = `10.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+                const rogueNet3 = `10.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`; // Ensure it's different usually
+                
+                const ips = [];
+                for(let i=0; i<3; i++) {
+                    ips.push(`${net3}.${Math.floor(Math.random()*253)+1}`);
+                }
+                const rogue = `${rogueNet3}.${Math.floor(Math.random()*253)+1}`;
+                ips.push(rogue);
+                gameState.currentQ = rogue;
+                
+                ips.sort(() => Math.random() - 0.5);
+
+                content.innerHTML = `
+                    <div class="text-yellow-400 text-sm mb-2 font-mono animate-pulse">WARNING: ROGUE DEVICE DETECTED IN NETWORK</div>
+                    <div class="text-lg text-gray-300 mb-6 font-mono">Identifikasi IP yang TIDAK berada dalam subnet /24 yang sama!</div>
+                    <div class="grid grid-cols-2 gap-4 w-full max-w-md">
+                        ${ips.map(ip => `<button onclick="checkAnswer('${ip}')" class="glass-panel border-red-500/30 hover:border-red-500 hover:bg-red-900/30 p-4 font-mono text-lg transition text-white">${ip}</button>`).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function checkAnswer(ans) {
+            // Visual feedback wrapper
+            const arena = document.getElementById('game-arena');
+            if (ans === gameState.currentQ) {
+                gameState.score += 10;
+                arena.style.boxShadow = "inset 0 0 50px rgba(0,255,0,0.2)";
+            } else {
+                gameState.score = Math.max(0, gameState.score - 5); // Penalty
+                gameState.time = Math.max(0, gameState.time - 2); // Time penalty
+                arena.style.boxShadow = "inset 0 0 50px rgba(255,0,0,0.2)";
+            }
+            setTimeout(() => arena.style.boxShadow = "none", 300);
+            
+            updateGameUI();
+            
+            if(gameState.time > 0) {
+                nextQuestion();
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameState.interval);
+            document.getElementById('final-score-display').innerText = gameState.score;
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            
+            // Save to Firebase
+            if(window.firebaseSaveScore && gameState.score > 0) {
+                window.firebaseSaveScore(gameState.active, gameState.score);
+            }
+        }
+
+        function quitGame() {
+            clearInterval(gameState.interval);
+            document.getElementById('game-arena').classList.add('hidden');
+            document.getElementById('game-menu').classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
